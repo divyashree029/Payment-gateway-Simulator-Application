@@ -1,4 +1,3 @@
-```markdown
 # 💳 Payment Gateway Simulator
 
 A full-stack Payment Gateway Simulator inspired by real-world systems like Razorpay and Stripe.  
@@ -14,12 +13,9 @@ Simulates payment flows such as initiation, authorization, refunds, and transact
 - Dockerized deployment  
 ---
 ## 🏗️ Architecture
-```
 Client (React)
 ↓
 Controller → Service → Repository → Database (MySQL)
-
-````
 ---
 
 ## 🛠️ Tech Stack
@@ -31,29 +27,9 @@ Controller → Service → Repository → Database (MySQL)
 
 ---
 
-## ⚙️ Setup
-```bash
-git clone https://github.com/your-username/payment-gateway-simulator.git
-cd payment-gateway-simulator
-docker compose up -d
-mvn spring-boot:run
-
-# frontend
-cd frontend
-npm install
-npm start
-````
----
-
 ## 🔄 Payment Flow
 ```
 User → Payment Request → Processing → DB Save → Webhook → Response
 ```
----
-## 📦 APIs
-* POST /api/payments
-* GET /api/payments/{id}
-* POST /api/refunds
-* POST /api/auth/login
----
+
 
