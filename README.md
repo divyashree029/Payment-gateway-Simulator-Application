@@ -4,11 +4,9 @@ A secure backend application built using **Spring Boot** that simulates the life
 
 ---
 
-<h2 align="center">📸 Project Preview</h2>
+## 📸 Project Preview
 
-<p align="center">
-  <img src="readme-preview.png" alt="Payment Gateway Simulator" width="1000"/>
-</p>
+![Payment Gateway Simulator](images/readme-preview.png)
 
 ---
 ## Features
