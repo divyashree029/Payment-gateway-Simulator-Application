@@ -98,3 +98,14 @@ src
 
 ---
 
+## 💡 Why This Project?
+
+Modern payment systems demand security, scalability, and reliability.
+
+This project demonstrates how those concepts can be implemented using Spring Boot while following clean architecture and RESTful design principles.
+
+It serves as a foundation for building enterprise-grade payment solutions and will continue evolving with additional production-ready features.
+
+---
+
+Happy Coding! 🚀
