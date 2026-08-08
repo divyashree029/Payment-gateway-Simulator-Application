@@ -26,6 +26,34 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(PaymentNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handlePaymentNotFound(PaymentNotFoundException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(InvalidPaymentStateException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidPaymentState(InvalidPaymentStateException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(RefundNotAllowedException.class)
+    public ResponseEntity<Map<String, String>> handleRefundNotAllowed(
+            RefundNotAllowedException ex) {
+
+        Map<String, String> error = new HashMap<>();
+
+        error.put("error", ex.getMessage());
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.CONFLICT
+        );
+    }
 }
 
 
