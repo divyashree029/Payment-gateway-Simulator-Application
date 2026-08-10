@@ -54,6 +54,20 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT
         );
     }
+
+    @ExceptionHandler(IdempotencyConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleIdempotencyConflict(
+            IdempotencyConflictException ex) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        response.put("status", 409);
+        response.put("message", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
 }
 
 

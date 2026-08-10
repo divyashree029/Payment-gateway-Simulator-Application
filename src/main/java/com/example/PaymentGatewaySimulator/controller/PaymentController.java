@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -21,25 +22,42 @@ public class PaymentController {
         this.paymentService=paymentService;
     }
 
+    @PreAuthorize("hasAnyRole('MERCHANT', 'ADMIN')")
     @PostMapping
-    public PaymentResponse createPayment(@Valid @RequestBody PaymentRequest request){
+    public PaymentResponse createPayment(
+            @Valid @RequestBody PaymentRequest request) {
+
         return paymentService.createPayment(request);
     }
 
+    @PreAuthorize("hasAnyRole('USER', 'MERCHANT', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<PaymentResponse> getPaymentById(
             @PathVariable Long id) {
         return ResponseEntity.ok(paymentService.getPaymentById(id));
     }
 
+    @PreAuthorize("hasAnyRole('MERCHANT', 'ADMIN')")
     @GetMapping
     public ResponseEntity<Page<PaymentResponse>> getAllPayments(
             Pageable pageable) {
-        return ResponseEntity.ok(paymentService.getAllPayments(pageable));
+
+        return ResponseEntity.ok(
+                paymentService.getAllPayments(pageable)
+        );
     }
 
+    @PreAuthorize("hasAnyRole('MERCHANT', 'ADMIN')")
     @PutMapping("/{id}/status")
-    public ResponseEntity<PaymentResponse> updatePaymentStatus(@PathVariable Long id, @Valid @RequestBody PaymentStatusRequest request) {
-        return ResponseEntity.ok(paymentService.updatePaymentStatus(id, request.getStatus()));
+    public ResponseEntity<PaymentResponse> updatePaymentStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody PaymentStatusRequest request) {
+
+        return ResponseEntity.ok(
+                paymentService.updatePaymentStatus(
+                        id,
+                        request.getStatus()
+                )
+        );
     }
 }

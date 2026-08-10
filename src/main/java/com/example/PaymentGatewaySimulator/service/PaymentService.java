@@ -4,75 +4,128 @@ import com.example.PaymentGatewaySimulator.dto.PaymentRequest;
 import com.example.PaymentGatewaySimulator.dto.PaymentResponse;
 import com.example.PaymentGatewaySimulator.entity.Payment;
 import com.example.PaymentGatewaySimulator.enums.PaymentStatus;
-import com.example.PaymentGatewaySimulator.exception.InvalidPaymentStateException;
+import com.example.PaymentGatewaySimulator.exception.IdempotencyConflictException;
 import com.example.PaymentGatewaySimulator.exception.PaymentNotFoundException;
 import com.example.PaymentGatewaySimulator.mapper.PaymentMapper;
 import com.example.PaymentGatewaySimulator.repository.PaymentRepository;
-import com.example.PaymentGatewaySimulator.util.TransactionIdGenerator;
+import com.example.PaymentGatewaySimulator.util.RequestFingerprintGenerator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final TransactionIdGenerator transactionIdGenerator;
 
-    public PaymentService(
-            PaymentRepository paymentRepository,
-            TransactionIdGenerator transactionIdGenerator) {
-
+    public PaymentService(PaymentRepository paymentRepository) {
         this.paymentRepository = paymentRepository;
-        this.transactionIdGenerator = transactionIdGenerator;
     }
 
-    /*public Payment createPayment(Payment payment){
-       payment.setPaymentStatus(PaymentStatus.INITIATED);
-       return paymentRepository.save(payment);
-    }*/
+    // ============================================================
+    // CREATE PAYMENT
+    // ============================================================
 
-    public PaymentResponse createPayment(PaymentRequest request) {
-        Payment payment = PaymentMapper.toEntity(request);
+    public PaymentResponse createPayment(
+            PaymentRequest request) {
+
+        String requestFingerprint =
+                RequestFingerprintGenerator.generate(request);
+
+        Payment existingPayment =
+                paymentRepository
+                        .findByIdempotencyKey(requestFingerprint)
+                        .orElse(null);
+
+        if (existingPayment != null) {
+
+            if (!existingPayment.getRequestFingerprint()
+                    .equals(requestFingerprint)) {
+
+                throw new IdempotencyConflictException(
+                        "Idempotency-Key already used with a different request"
+                );
+            }
+
+            return PaymentMapper.toResponse(existingPayment);
+        }
+
+        Payment payment =
+                PaymentMapper.toEntity(request);
+
+        payment.setIdempotencyKey(requestFingerprint);
+
+        payment.setRequestFingerprint(requestFingerprint);
+
         payment.setTransactionId(
-                transactionIdGenerator.generateTransactionId()
+                "PAY-" + UUID.randomUUID()
         );
-        payment.setPaymentStatus(PaymentStatus.INITIATED);
-        Payment savedPayment = paymentRepository.save(payment);
+
+        payment.setPaymentStatus(
+                PaymentStatus.INITIATED
+        );
+
+        Payment savedPayment =
+                paymentRepository.save(payment);
+
         return PaymentMapper.toResponse(savedPayment);
     }
 
+
+    // ============================================================
+    // GET PAYMENT BY ID
+    // ============================================================
+
     public PaymentResponse getPaymentById(Long id) {
-        Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() ->
-                        new PaymentNotFoundException(
-                                "Payment not found with id : " + id
-                        ));
+
+        Payment payment =
+                paymentRepository.findById(id)
+                        .orElseThrow(
+                                () -> new PaymentNotFoundException(
+                                        "Payment not found with id: " + id
+                                )
+                        );
+
         return PaymentMapper.toResponse(payment);
     }
 
-    public Page<PaymentResponse> getAllPayments(Pageable pageable) {
-        Page<Payment> payments = paymentRepository.findAll(pageable);
-        return payments.map(PaymentMapper::toResponse);
+
+    // ============================================================
+    // GET ALL PAYMENTS - PAGINATED
+    // ============================================================
+
+    public Page<PaymentResponse> getAllPayments(
+            Pageable pageable) {
+
+        return paymentRepository
+                .findAll(pageable)
+                .map(PaymentMapper::toResponse);
     }
-    public PaymentResponse updatePaymentStatus(Long id, PaymentStatus newStatus) {
-        Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() ->
-                        new PaymentNotFoundException("Payment not found with id: " + id));
-        PaymentStatus currentStatus = payment.getPaymentStatus();
 
-        boolean validTransition = (currentStatus == PaymentStatus.INITIATED && newStatus == PaymentStatus.PROCESSING)
-                        || (currentStatus == PaymentStatus.PROCESSING && (newStatus == PaymentStatus.SUCCESS
-                        || newStatus == PaymentStatus.FAILED))
-                        || (currentStatus == PaymentStatus.SUCCESS && newStatus == PaymentStatus.REFUNDED);
 
-        if (!validTransition) {
-            throw new InvalidPaymentStateException(
-                    "Invalid payment state transition: " + currentStatus + " -> " + newStatus);
-        }
-        payment.setPaymentStatus(newStatus);
-        Payment updatedPayment = paymentRepository.save(payment);
+    // ============================================================
+    // UPDATE PAYMENT STATUS
+    // ============================================================
+
+    public PaymentResponse updatePaymentStatus(
+            Long id,
+            PaymentStatus status) {
+
+        Payment payment =
+                paymentRepository.findById(id)
+                        .orElseThrow(
+                                () -> new PaymentNotFoundException(
+                                        "Payment not found with id: " + id
+                                )
+                        );
+
+        payment.setPaymentStatus(status);
+
+        Payment updatedPayment =
+                paymentRepository.save(payment);
+
         return PaymentMapper.toResponse(updatedPayment);
     }
-
 }
